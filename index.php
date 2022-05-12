@@ -143,6 +143,13 @@ if(!empty($_REQUEST['type'])){
             
             unlink($path);
             break;
+        case 'imgview':// img数据
+            $path=!empty($_REQUEST['path']) ? $_REQUEST['path'] : die("false");
+            header("Content-Type: image/png;text/html; charset=utf-8");
+            if(file_exists($path)){
+                echo file_get_contents($path);
+            }else{die(2);}
+            break;
         default:// 条件不成立就躺尸
             
             break;
@@ -163,6 +170,7 @@ if(!empty($_REQUEST['type'])){
 ::-webkit-scrollbar {
     width: 0px;
 }
+
 *{
 	margin: 0;
 	padding: 0;
@@ -187,6 +195,7 @@ body{
 	resize: none;
 	color: #F8F8F8;
 	margin-top: 1%;
+	/*overflow-x: overlay;*/
 }
 .view{
 	background-color: #f8f8f8;
@@ -218,14 +227,17 @@ ul li{list-style:none;}
 #phpcodes{width:60vw;height:4vh;float:right;background-color:#333;color:green;border:0;padding-left:10px;}
 #coderun{width:10vw;height:4vh;float:right;background-color:#333;color:green;border:0}
 #coderun:hover{background-color:green;color:#fff;}
+#viewimg{position:fixed;right:0px;bottom:4vh;max-height:30vh;max-width:50vw;display:none;z-index:999;}
 </style>
 </head>
 <body>
 
     <input id="address" class="address" type="text" value="/www/wwwroot" />
     <input class="re" type="button" onclick="getdirs(document.getElementById('address').value)" value="转到&nbsp;➦" />
-    <input class="re" type="button" onclick="newfile()" value="📄&nbsp;新建"/>
-    <input class="re" type="button" onclick="repath()" value="🔙&nbsp;上级"/>
+    <!--<input class="re" type="button" onclick="newfile()" value="📄&nbsp;新建"/>-->
+    <!--<input class="re" type="button" onclick="repath()" value="🔙&nbsp;上级"/>-->
+    <input class="re" type="button" onclick="downurl()" value="▼&nbsp;远程下载"/>
+    <input class="re" type="button" onclick="downpath()" value="⇆&nbsp;迁移目录"/>
     <input class="re" type="button" onclick="filesave()" value="📃&nbsp;保存"/>
     <div class="view">
         
@@ -249,7 +261,8 @@ ul li{list-style:none;}
 	</div>
 <form id="formdata" enctype="multipart/form-data">
   <input id="file" type="file" name="file[]" multiple style="display:none;" onchange="uploading()"/>
-</form>	
+</form>
+<img src="" id="viewimg" onclick="this.style.display='none'"/>
 <script src="http://cdn.staticfile.org/ace/1.4.14/ace.min.js"></script>
 <script src="http://cdn.staticfile.org/ace/1.4.14/ext-language_tools.js"></script>
 <script src="https://cdn.staticfile.org/jquery/3.6.0/jquery.min.js"></script>
@@ -272,7 +285,7 @@ function aceedit(language){
     });
     editor.session.setUseWrapMode(true);//切换自动换行
     document.getElementById('code').style.fontSize='14px';//设置字体大小
-    editor.setHighlightActiveLine(false);//设置行高亮显示
+    // editor.setHighlightActiveLine(false);//设置行高亮显示
     editor.setShowPrintMargin(false);//设置打印边距可见性
     //editor.getSession().setUseWorker(false);取消语言模式的语法检查
     editor.setTheme("ace/theme/monokai");
@@ -281,7 +294,8 @@ function aceedit(language){
     //editor.getSession().setMode("ace/mode/javascript");
     var code = document.getElementById("code");
     var view = document.getElementById("view");
-    editor.execCommand ('find');//编辑内容搜索
+    // editor.execCommand ('find');//编辑内容搜索
+    // editor.execCommand('replace');
     // editor.replaceAll('bar');
     editor.getSession().on ('change', function (e) {
                 //  view.innerHTML=editor.getValue ();//获得输入内容
@@ -315,12 +329,12 @@ function getdirs(path){
             data=JSON.parse(data);
             if(data['folder']){
                 for(var i=0; i<data['folder'].length; i++){
-                    str+='<li><img src="/file_icon/folder.png" /><a onclick="getdirs(this.title)" title="'+data['folder'][i]['path']+'" href="javascript:void(0);" >'+data['folder'][i]['name'].slice(0,15)+'</a><span onclick="filedels(\''+data['folder'][i]['path']+'\')">删除</span><span onclick="filerename(\''+data['folder'][i]['path']+'\')">重命名</span></li>';
+                    str+='<li><img src="/file_icon/folder.png" /><a onclick="getdirs(this.title)" title="'+data['folder'][i]['path']+'" href="javascript:void(0);" >'+data['folder'][i]['name'].slice(0,50)+'</a><span onclick="filedels(\''+data['folder'][i]['path']+'\')">删除</span><span onclick="filerename(\''+data['folder'][i]['path']+'\')">重命名</span></li>';
                 }
             }
             if(data['file']){
                 for(var i=0; i<data['file'].length; i++){
-                    str+='<li><img src="/file_icon/'+data['file'][i]['type']+'.png" onerror="this.src=\'/file_icon/txt.png\'"/><a onclick="getfiles(this.title)" title="'+data['file'][i]['path']+'" href="javascript:void(0);">'+data['file'][i]['name'].slice(0,60)+'</a><span onclick="filedels(\''+data['file'][i]['path']+'\')">删除</span><span onclick="filerename(\''+data['file'][i]['path']+'\')">重命名</span><span onclick="getfiles(\''+data['file'][i]['path']+'\')">修改</span></li>';
+                    str+='<li><img src="/file_icon/'+data['file'][i]['type']+'.png" onerror="this.src=\'/file_icon/txt.png\'"/><a onclick="getfiles(this.title)" title="'+data['file'][i]['path']+'" href="javascript:void(0);">'+data['file'][i]['name'].slice(0,50)+'</a><span onclick="filedels(\''+data['file'][i]['path']+'\')">删除</span><span onclick="filerename(\''+data['file'][i]['path']+'\')">重命名</span><span onclick="getfiles(\''+data['file'][i]['path']+'\')">修改</span></li>';
                 }
             }
             document.getElementById("view").innerHTML=str;
@@ -365,15 +379,27 @@ if(code==0){return window.btoa(unescape(encodeURIComponent(str)));}else if(code=
 }
 
 function getfiles(path){
-    if (path){
-        $.get("/?type=getfiles&path="+path,function(data,status){
-            if(data){
-                filepath=path;
-                editor.setValue(data);
-            }else{
-                alert("文件不存在！"+data);
-            }
-        });
+    var type = ["zip", "mp4", "avi", "mov"];
+    var type = path.split(".").slice(-1)[0];
+    if(type!="zip" && type!="rar" && type!="7z" && type!="gz" && type!="mp4" && type!="avi" && type!="mov" && type!="ts"){
+        if (path){
+            $.get("/?type=getfiles&path="+path,function(data,status){
+                if(data){
+                    filepath=path;
+                    editor.setValue(data);
+                    editor.moveCursorTo (0, 0);
+                }else{
+                    alert("文件不存在！"+data);
+                }
+            });
+        }
+    }
+    
+    if(type=="png" || type=="jpg" || type=="jpeg" || type=="ico" || type=="bmp" || type=="gif" || type=="apng" || type=="svg" || type=="webp"){
+        console.log(type)
+        document.getElementById("viewimg").src="/?type=imgview&path="+path;
+        document.getElementById("viewimg").style.display="block";
+        
     }
 }
 function filesave(){
@@ -453,6 +479,33 @@ function uploading(){
             }
         }
     });
+}
+
+document.onkeydown=function(e){    //对整个页面的键盘事件进行监听
+    // console.log(e.keyCode);
+    var  keyCode = e.keyCode || e.which || e.charCode;
+    var  ctrlKey = e.ctrlKey || e.metaKey;
+    var  shiftKey=e.shiftKey;
+    var  commandKey=e.commandKey;
+    // control=17 command=91  s=83  c=67  v=86  h=72
+    if(ctrlKey && e.keyCode==83){//解决win保存
+        filesave();
+        e.preventDefault();
+        return false;
+    }else if(commandKey && e.keyCode==83){//解决Mac保存
+        filesave();
+        e.preventDefault();
+        return false;
+    }else if(ctrlKey && e.keyCode==72){//解决win替换
+        editor.execCommand('replace');
+        e.preventDefault();
+        return false;
+    }else if(commandKey && e.keyCode==72){//解决Mac替换
+        editor.execCommand('replace');
+        e.preventDefault();
+        return false;
+    }
+    // return false;
 }
 </script>
 </body>
